@@ -1,0 +1,132 @@
+## <summary>Policy for filemanage system</summary>
+
+########################################
+## <summary>
+##	Create new type for new level.
+## </summary>
+## <param name="user">
+##	<summary>
+##	Type create
+##	</summary>
+## </param>
+## <rolecap/>
+#
+interface(`create_level_type',`
+
+	type $1_file_t;
+	files_type($1_file_t);
+	type $1_dir_t;
+	files_type($1_dir_t);
+
+')
+########################################
+## <summary>
+##	Create tmp file type for low level.
+## </summary>
+## <param name="user">
+##	<summary>
+##	Type create
+##	</summary>
+## </param>
+## <rolecap/>
+#
+interface(`create_tmp_type',`
+
+	type $1_tmp_file_t;
+	files_type($1_tmp_file_t);
+
+
+')
+
+########################################
+## <summary>
+##	Create a new role and set basic rule for the role self
+## </summary>
+## <param name="user name">
+##	<summary>
+##	Create a role which can login the system.
+##	Set a lot of rules for user to manage files belong to themselves.
+##	</summary>
+## </param>
+## <rolecap/>
+#
+interface(`create_level_role',`
+
+	userdom_unpriv_user_template($1);
+	create_level_type($1);
+	
+### allow self to rw self file
+
+	allow $1_t file_topdir_t:dir {list_dir_perms };
+
+	allow $1_t $1_dir_t:dir {rw_dir_perms create_dir_perms delete_dir_perms};
+	allow $1_t $1_dir_t:file rw_file_perms;
+	allow $1_t $1_file_t:file {rw_file_perms delete_file_perms create_file_perms};
+	allow $1_t proc_t:dir search_dir_perms;
+	allow $1_t self:dir search_dir_perms;
+	allow $1_t self:file read_file_perms;
+
+	type_transition $1_t $1_dir_t:file $1_file_t;
+')
+
+########################################
+## <summary>
+##	Set high level rules to low level
+## </summary>
+## <param name="name">
+##	<summary>
+##	High level's user name
+##	</summary>
+## </param>
+## <param name="name">
+##	<summary>
+##	Low level's user name
+##	</summary>
+## </param>
+## <rolecap/>
+#
+interface(`set_to_low',`
+
+	allow $1_t $2_dir_t:dir {list_dir_perms remove_name write};
+	allow $1_t $2_file_t:file {read_file_perms rename unlink};
+	
+	gen_require(`
+	type $2_tmp_file_t;
+	')
+	allow $1_t $2_tmp_file_t:file {getattr setattr};
+	
+')
+
+########################################
+## <summary>
+##	Set low level rules to high level
+## </summary>
+## <param name="name">
+##	<summary>
+##	Low level's user name
+##	</summary>
+## </param>
+## <param name="name">
+##	<summary>
+##	High level's user name
+##	</summary>
+## </param>
+## <rolecap/>
+#
+interface(`set_to_high',`
+
+	allow $1_t $2_dir_t:dir { add_entry_dir_perms };
+	allow $1_t $2_dir_t:file { write create open };
+
+	gen_require(`
+	type $1_tmp_file_t;
+	')
+	allow $1_t $1_tmp_file_t:file manage_file_perms;
+	type_transition $1_t $2_dir_t:file $1_tmp_file_t;
+	
+')
+
+
+
+
+

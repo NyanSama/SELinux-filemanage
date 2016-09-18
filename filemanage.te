@@ -1,0 +1,75 @@
+policy_module(filemanage,1.6.0) 
+
+########################################
+#
+# Declarations
+#
+
+## top dir type
+	type file_topdir_t;
+	files_type(file_topdir_t);
+
+	create_level_role(level0);
+	create_level_role(level1);
+	create_level_role(level2);
+
+	create_tmp_type(level1);
+	create_tmp_type(level2);
+
+	set_to_low(level0,level1);
+	set_to_low(level0,level2);
+	set_to_low(level1,level2);
+
+	set_to_high(level1,level0);
+	set_to_high(level2,level0);
+	set_to_high(level2,level1);
+
+
+#########################################
+#
+#	Level 0
+#
+
+#	allow level0_t level1_dir_t:dir {list_dir_perms remove_name write};
+#	allow level0_t level1_file_t:file {read_file_perms rename unlink};
+
+#	allow level0_t level2_dir_t:dir list_dir_perms;
+#	allow level0_t level2_file_t:file {read_file_perms rename unlink};
+
+
+#########################################
+#
+#	level 1
+#
+
+#	allow level1_t level2_dir_t:dir {list_dir_perms remove_name};
+#	allow level1_t level2_file_t:file {read_file_perms rename unlink};
+
+#	allow level1_t level0_dir_t:dir { add_entry_dir_perms };
+#	allow level1_t level0_dir_t:file { write create open };
+
+
+#	type level1_tmp_file_t;
+#	files_type(level1_tmp_file_t);
+#	allow level1_t level1_tmp_file_t:file manage_file_perms;
+#	type_transition level1_t level0_dir_t:file level1_tmp_file_t;
+
+#########################################
+#
+#	level 2
+#
+
+#	allow level2_t level0_dir_t:dir { add_entry_dir_perms };
+#	allow level2_t level0_dir_t:file { write create open };
+#	allow level2_t level0_file_t:file create;
+
+#	allow level2_t level1_dir_t:dir { add_entry_dir_perms };
+#	allow level2_t level1_dir_t:file { write create open };
+
+#	type level2_tmp_file_t;
+#	files_type(level2_tmp_file_t);
+#	allow level2_t level2_tmp_file_t:file manage_file_perms;
+#	type_transition level2_t level0_dir_t:file level2_tmp_file_t;
+#	type_transition level2_t level1_dir_t:file level2_tmp_file_t;
+	
+	
